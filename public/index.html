@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Generator</title>
+    <style>
+        body,
+        h1,
+        ul {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f8f8;
+            color: #333;
+        }
+
+        #title{
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            min-height: 95dvh;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            width: 100%;
+            cursor: pointer;
+            background-color: #fff;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s, border 0.3s;
+            border: 1px solid #878787;
+        }
+
+        .nextBtn {
+            margin-top: 2rem;
+        }
+
+        .quiz {
+            margin-top: 20px;
+        }
+
+        .question {
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: medium;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        ul li {
+            margin-bottom: 10px;
+        }
+
+        #score {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #score {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f6f6f6;
+            border-radius: 5px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        #score span {
+            color: #161616;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media screen and (max-width: 480px) {}
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>YouTube Video Quiz Generator</h1>
+        <label for="videoUrl">Enter YouTube Video URL:</label>
+        <input type="text" id="videoUrl" name="videoUrl">
+        <button onclick="generateQuiz()" id="generateBtn">Generate Quiz</button>
+        <div>
+            <p id="title"></p>
+        <div class="quiz" id="quizContainer"></div>
+    </div>
+        <div id="score"></div>
+        <div class="loader" id="loader" style="display: none;"></div>
+    </div>
+
+    <script>
+        let quizzes = [];
+        let currentQuestion = 0;
+        let score = 0;
+        const generateBtnEl = document.getElementById("generateBtn")
+        const quizContainer = document.getElementById("quizContainer");
+        const scoreElement = document.getElementById("score");
+        const titleEl = document.getElementById("title")
+        async function generateQuiz() {
+            generateBtnEl.setAttribute("disabled", "true")
+            const loader = document.getElementById("loader");
+            loader.style.display = "block"; // Show loader
+            quizContainer.innerHTML = "";
+            scoreElement.innerHTML = ""
+            scoreElement.style.display = "none"
+            titleEl.textContent=""
+            const videoUrl = document.getElementById("videoUrl").value;
+            const response = await fetch(`/generate-quiz?url=${videoUrl}`);
+            const data = await response.json();
+           
+
+
+            if (data.error) {
+                alert(data.error);
+            } else {
+            quizzes = data.quizzes;
+            currentQuestion = 0;
+            score = 0;
+            displayQuestion();
+            }
+            loader.style.display = "none"; // Hide loader
+            generateBtnEl.removeAttribute("disabled")
+            titleEl.textContent = data.title
+        }
+
+        function displayQuestion() {
+            quizContainer.innerHTML = ""
+            const questionNumberEl = document.createElement("p");
+            questionNumberEl.textContent = `Question ${currentQuestion + 1} of ${quizzes.length}`
+            quizContainer.appendChild(questionNumberEl)
+            const questionElement = document.createElement("div");
+            const currentQuiz = quizzes[currentQuestion];
+            questionElement.classList.add("question");
+            questionElement.innerHTML = `
+                <p>${currentQuiz.question}</p>
+                <ul>
+                    <li><button onclick="checkAnswer(0)">${currentQuiz.options[0]}</button></li>
+                    <li><button onclick="checkAnswer(1)">${currentQuiz.options[1]}</button></li>
+                    <li><button onclick="checkAnswer(2)">${currentQuiz.options[2]}</button></li>
+                    <li><button onclick="checkAnswer(3)">${currentQuiz.options[3]}</button></li>
+                </ul>
+            `;
+            quizContainer.appendChild(questionElement);
+            const nextBtnEl = document.createElement("button")
+            nextBtnEl.textContent = "Next"
+            nextBtnEl.classList.add("nextBtn")
+            quizContainer.appendChild(nextBtnEl)
+            nextBtnEl.addEventListener("click", () => {
+                if (currentQuestion < quizzes.length) {
+                    displayQuestion();
+                } else {
+                    showFinalScore();
+                }
+            })
+        }
+
+
+        function checkAnswer(selectedIndex) {
+            const currentQuiz = quizzes[currentQuestion];
+            const selectedOption = document.querySelectorAll('.question li button')[selectedIndex];
+            if (currentQuiz.correct_option === currentQuiz.options[selectedIndex]) {
+                score++;
+                selectedOption.style.background = "green"
+                selectedOption.style.color = "white"
+            } else {
+                selectedOption.style.background = "red"
+                selectedOption.style.color = "white"
+                const correctIndex = currentQuiz.options.indexOf(currentQuiz.correct_option);
+                document.querySelectorAll('.question li button')[correctIndex].style.background = "green"
+                document.querySelectorAll('.question li button')[correctIndex].style.color = "white"
+            }
+            currentQuestion++;
+            document.querySelectorAll('.question li button').forEach((el) => el.setAttribute("disabled", "true"))
+        }
+
+        function showFinalScore() {
+            scoreElement.style.display = "block"
+            quizContainer.innerHTML = ""
+            scoreElement.innerHTML = `<p>Your final score is: ${score} out of ${quizzes.length}</p>`;
+        }
+    </script>
+</body>
+
+</html>
