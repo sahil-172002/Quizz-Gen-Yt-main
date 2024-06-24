@@ -3,7 +3,7 @@ const express = require('express');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const ytt = require("youtube-transcript");
 const path = require('path');
-
+    
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -38,10 +38,11 @@ NOTE: make sure the output is plain text only do not format in json object`;
         res.json(JSON.parse(text));
     } catch (e) {
         console.error(e);
-        res.status(500).json({ error: "Sorry, this video can't be processed at this moment." });
+        res.status(500).json({ error: "Sorry, this video can't be processed at this moment."});
     }
 });
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
+    
